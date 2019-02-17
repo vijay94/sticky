@@ -75,12 +75,14 @@ var Sticky = Class.extend({
 	position3 : 0,
 	position4 : 0,
 	stickyCss : '<style>body{margin:0;height:100%;width:100%}.sticky-widget.close{cursor:pointer;}\
-				.sticky-widget{position:fixed;min-height:100px;min-width:100px;background-color:#fdd835;box-shadow:0 3px 6px rgba(0,0,0,.16),0 3px 6px rgba(0,0,0,.23);padding:10px}\
+				.sticky-widget{position:fixed;min-height:20px;min-width:200px;background-color:#fdd835;box-shadow:0 3px 6px rgba(0,0,0,.16),0 3px 6px rgba(0,0,0,.23);padding:10px}\
 				.sticky-widget.left{left:10px}.sticky-widget.right{right:10px}\
 				.sticky-widget.top{top:10px}.sticky-widget.bottom{bottom:10px}\
 				.sticky-head {cursor: move;display: block;float: left;width: 100%;}\
-				.sticky-text{}\
-				.sticky-widget textarea{border:0;resize: both; height:90px !important;background-color:inherit}</style>',
+				.add-sticky {float: left;margin-right: 10px;cursor: pointer;}\
+				.sticky-name {float: left;max-width: 70%;text-overflow: ellipsis;cursor: auto;}\
+				.sticky-head .close {float: right;cursor: pointer;}\
+				.sticky-widget textarea{border:0;resize: both; height:90px;background-color:inherit}</style>',
 	stickyHtml: '\
 			<div class="sticky-widget">\
 				<div class="sticky-head">\
@@ -88,7 +90,9 @@ var Sticky = Class.extend({
 					<span class="sticky-name">Untitled</span>\
 					<span class="close">&times;</span>\
 				</div>\
-				<textarea class="sticky-text"></textarea>\
+				<div class="sticky-body">\
+					<textarea class="sticky-text"></textarea>\
+				</div>\
 			</div>\
 		 ',
 	options : {
@@ -108,7 +112,7 @@ var Sticky = Class.extend({
 	},
 
 	create : function() {
-		// this.element.append(this.stickyCss);
+		this.element.append(this.stickyCss);
 		this.createSticky();
 		this.initListeners();
 	},
