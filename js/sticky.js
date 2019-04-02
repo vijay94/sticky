@@ -70,10 +70,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 var Sticky = Class.extend({
 	element : "",
-	position1 : 0,
-	position2 : 0,
-	position3 : 0,
-	position4 : 0,
+	stickies: {},
+	storageKey: "sticky_items",
+	stickyCount : 0,
 	stickyCss : '<style>body{margin:0;height:100%;width:100%}.sticky-widget.close{cursor:pointer;}\
 				.sticky-widget{position:fixed;min-height:20px;min-width:200px;background-color:#fdd835;box-shadow:0 3px 6px rgba(0,0,0,.16),0 3px 6px rgba(0,0,0,.23);padding:10px}\
 				.sticky-widget.left{left:10px}.sticky-widget.right{right:10px}\
@@ -81,20 +80,18 @@ var Sticky = Class.extend({
 				.sticky-head {cursor: move;display: block;float: left;width: 100%;}\
 				.add-sticky {float: left;margin-right: 10px;cursor: pointer;}\
 				.sticky-name {float: left;max-width: 70%;text-overflow: ellipsis;cursor: auto;}\
+				.hide {display:none}\
 				.sticky-head .close {float: right;cursor: pointer;}\
 				.sticky-widget textarea{border:0;resize: both; height:90px;background-color:inherit}</style>',
-	stickyHtml: '\
-			<div class="sticky-widget">\
-				<div class="sticky-head">\
+	stickyHtml: '<div class="sticky-head">\
 					<span class="add-sticky">+</span>\
 					<span class="sticky-name">Untitled</span>\
+					<input class="sticky-name hide" type="text" value="Untitled"/></span>\
 					<span class="close">&times;</span>\
 				</div>\
 				<div class="sticky-body">\
 					<textarea class="sticky-text"></textarea>\
-				</div>\
-			</div>\
-		 ',
+				</div>',
 	options : {
 		right : false,
 		left : false,
@@ -113,16 +110,32 @@ var Sticky = Class.extend({
 
 	create : function() {
 		this.element.append(this.stickyCss);
-		this.createSticky();
+		this.loadStickies();
 		this.initListeners();
+		this.initStorage();
+	},
+
+	getStickyElement: function() {
+		return $("<div>").addClass("sticky-widget").attr("id", "sticky"+new Date().getTime());
 	},
 
 	createSticky : function() {
-		this.element.append(this.stickyHtml);
+		this.stickyCount++;
+		var stickyElement = this.getStickyElement();
+		if (arguments.length == 2 ){
+			stickyElement.append($($.parseHTML(this.stickyHtml)));
+			stickyElement.attr("id", arguments[0]);
+			stickyElement.find(".sticky-text").val(arguments[1]);
+		} else {
+			stickyElement.append(this.stickyHtml);
+		}
+
 		if (this.options.bottom)
-			this.element.find(".sticky-widget").addClass("bottom");
+			stickyElement.addClass("bottom");
 		if (this.options.right)
-			this.element.find(".sticky-widget").addClass("right");	
+			stickyElement.addClass("right");
+
+		this.element.append(stickyElement);
 	},
 
 	initListeners : function() {
@@ -155,16 +168,55 @@ var Sticky = Class.extend({
 			$(document).on("mousemove", mouseMove);
 		});
 
-		this.element.on("dblclick", ".sticky-name",function (e) {
-			$(this).hide();
+		this.element.on("dblclick", "span.sticky-name", function(e) {
+			$(this).parents(".sticky-widget").find(".sticky-name").toggleClass("hide");
 		});
 
-		this.element.on("click", ".add-sticky",function(e) {
+		this.element.on("blur", "input.sticky-name", function(e) {
+			$(this).parents(".sticky-widget").find("span.sticky-name").html($(this).val());
+			$(this).parents(".sticky-widget").find(".sticky-name").toggleClass("hide");
+		});
+
+		this.element.on("click", ".add-sticky", function(e) {
 			self.createSticky();
 		});
 
-		this.element.on("click", ".sticky-head .close",function(e) {
+		this.element.on("click", ".sticky-head .close", function(e) {
+			self.stickyCount--;
 			$(this).parents(".sticky-widget").remove();
+		});
+	},
+
+	loadStickies: function() {
+		this.stickies = this.getStickies();
+		var self = this;
+		if(!$.isEmptyObject(this.stickies)) 
+			$.each(this.stickies, function(key, value) {
+				self.createSticky(key, value.value);
+			});
+		else
+			this.createSticky();
+	},
+
+	getStickies: function() {
+		return window.localStorage.getItem(this.storageKey) ?
+			JSON.parse(window.localStorage.getItem(this.storageKey)) :
+			{};
+	},
+
+	storeStickies: function() {
+		window.localStorage.setItem(this.storageKey, JSON.stringify(this.stickies));
+	},
+
+	initStorage : function() {
+		var self = this;
+		this.element.on("change", ".sticky-text", function(e) {
+
+			if (!self.stickies[$(this).parents(".sticky-widget").attr("id")])
+				self.stickies[$(this).parents(".sticky-widget").attr("id")] = {}
+
+			self.stickies[$(this).parents(".sticky-widget").attr("id")].value = $(this).val();
+			self.storeStickies();
 		});
 	}
 });
